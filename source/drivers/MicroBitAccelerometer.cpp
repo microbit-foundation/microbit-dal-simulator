@@ -29,11 +29,6 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitFiber.h"
 #include "MicroBitDevice.h"
 
-#include "MicroBitI2C.h"
-#include "MMA8653.h"
-#include "FXOS8700.h"
-#include "LSM303Accelerometer.h"
-
 /**
   * Constructor.
   * Create a software abstraction of an FXSO8700 combined accelerometer/magnetometer
@@ -72,53 +67,23 @@ MicroBitAccelerometer::MicroBitAccelerometer(CoordinateSpace &cspace, uint16_t i
  * Device autodetection. Scans the given I2C bus for supported accelerometer devices.
  * if found, constructs an appropriate driver and returns it.
  *
- * @param i2c the bus to scan. 
+ * @param i2c the bus to scan.
  * @param id the unique EventModel id of this component. Defaults to: MICROBIT_ID_ACCELEROMETER
  *
  */
-MicroBitAccelerometer& MicroBitAccelerometer::autoDetect(MicroBitI2C &i2c)
+MicroBitAccelerometer& MicroBitAccelerometer::autoDetect()
 {
     if (MicroBitAccelerometer::detectedAccelerometer == NULL)
     {
-        // Configuration of IRQ lines
-        MicroBitPin int1(MICROBIT_ID_IO_INT1, P0_28, PIN_CAPABILITY_STANDARD);
-        MicroBitPin int2(MICROBIT_ID_IO_INT2, P0_29, PIN_CAPABILITY_STANDARD);
-        MicroBitPin int3(MICROBIT_ID_IO_INT3, P0_27, PIN_CAPABILITY_STANDARD);
-
         // All known accelerometer/magnetometer peripherals have the same alignment
         CoordinateSpace &coordinateSpace = *(new CoordinateSpace(SIMPLE_CARTESIAN, true, COORDINATE_SPACE_ROTATED_0));
 
-        // Now, probe for connected peripherals, if none have already been found.
-        if (MMA8653::isDetected(i2c))
-            MicroBitAccelerometer::detectedAccelerometer = new MMA8653(i2c, int1, coordinateSpace);
-
-        else if (LSM303Accelerometer::isDetected(i2c))
-            MicroBitAccelerometer::detectedAccelerometer = new LSM303Accelerometer(i2c, int1, coordinateSpace);
-
-        else if (FXOS8700::isDetected(i2c))
-        {
-            FXOS8700 *fxos =  new FXOS8700(i2c, int3, coordinateSpace);
-            MicroBitAccelerometer::detectedAccelerometer = fxos;
-            MicroBitCompass::detectedCompass = fxos;
-        }
-
-        // Insert this case to support FXOS on the microbit1.5-SN
-        //else if (FXOS8700::isDetected(i2c, 0x3A))
-        //{
-        //    FXOS8700 *fxos =  new FXOS8700(i2c, int3, coordinateSpace, 0x3A);
-        //    MicroBitAccelerometer::detectedAccelerometer = fxos;
-        //    MicroBitCompass::detectedCompass = fxos;
-        //}
-
-        else
-        {
-            MicroBitAccelerometer *unavailable =  new MicroBitAccelerometer(coordinateSpace, MICROBIT_ID_ACCELEROMETER);
-            MicroBitAccelerometer::detectedAccelerometer = unavailable;
-        }
+        MicroBitAccelerometer *accelerometer =  new MicroBitAccelerometer(coordinateSpace, MICROBIT_ID_ACCELEROMETER);
+        MicroBitAccelerometer::detectedAccelerometer = accelerometer;
     }
 
-    if (MicroBitCompass::detectedCompass)
-        MicroBitCompass::detectedCompass->setAccelerometer(*MicroBitAccelerometer::detectedAccelerometer);
+    // if (MicroBitCompass::detectedCompass)
+    //     MicroBitCompass::detectedCompass->setAccelerometer(*MicroBitAccelerometer::detectedAccelerometer);
 
     return *MicroBitAccelerometer::detectedAccelerometer;
 }
@@ -138,17 +103,16 @@ MicroBitAccelerometer& MicroBitAccelerometer::autoDetect(MicroBitI2C &i2c)
   */
 int MicroBitAccelerometer::update()
 {
+    // Scale into millig (approx) and align to ENU coordinate system
+    sampleENU.x = EM_ASM_INT({ return MbedJSUI.AccelerometerSensorY.read(); });
+    sampleENU.y = -EM_ASM_INT({ return MbedJSUI.AccelerometerSensorX.read(); });
+    sampleENU.z = EM_ASM_INT({ return MbedJSUI.AccelerometerSensorZ.read(); });
+
     // Store the new data, after performing any necessary coordinate transformations.
     sample = coordinateSpace.transform(sampleENU);
 
-    // Indicate that pitch and roll data is now stale, and needs to be recalculated if needed.
-    status &= ~MICROBIT_ACCELEROMETER_IMU_DATA_VALID;
-
     // Update gesture tracking
     updateGesture();
-
-    // Indicate that a new sample is available
-    MicroBitEvent e(id, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE);
 
     return MICROBIT_OK;
 };
@@ -439,8 +403,8 @@ int MicroBitAccelerometer::configure()
  */
 int MicroBitAccelerometer::requestUpdate()
 {
-    microbit_panic(MICROBIT_HARDWARE_UNAVAILABLE_ACC);
-    return MICROBIT_NOT_SUPPORTED;
+    update();
+    return MICROBIT_OK;
 }
 
 /**

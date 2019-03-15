@@ -33,7 +33,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitImage.h"
 #include "MicroBitFont.h"
 #include "MicroBitMatrixMaps.h"
-#include "MicroBitLightSensor.h"
+#include "EventModel.h"
 
 /**
   * Event codes raised by MicroBitDisplay
@@ -145,9 +145,6 @@ class MicroBitDisplay : public MicroBitComponent
 
     // The number of pixels the image is shifted on the display in each quantum.
     int8_t scrollingImageStride;
-
-    // A pointer to an instance of light sensor, if in use
-    MicroBitLightSensor* lightSensor;
 
     // Flag to indicate if image has been rendered to screen yet (or not)
     bool scrollingImageRendered;
@@ -596,7 +593,7 @@ public:
 
     /**
       * Updates the font that will be used for display operations.
-	  *
+      *
       * @param font the new font that will be used to render characters.
       *
       * @note DEPRECATED! Please use MicroBitFont::setSystemFont() instead.
@@ -605,7 +602,7 @@ public:
 
     /**
       * Retrieves the font object used for rendering characters on the display.
-	  *
+      *
       * @note DEPRECATED! Please use MicroBitFont::getSystemFont() instead.
       */
     MicroBitFont getFont();

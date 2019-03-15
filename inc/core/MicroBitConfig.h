@@ -87,10 +87,10 @@ DEALINGS IN THE SOFTWARE.
 
 // Defines where in memory persistent data is stored.
 #ifndef KEY_VALUE_STORE_PAGE
-#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17)) 
+#define KEY_VALUE_STORE_PAGE	                (PAGE_SIZE * (NRF_FICR->CODESIZE - 17))
 #endif
 
-#ifndef BLE_BOND_DATA_PAGE 
+#ifndef BLE_BOND_DATA_PAGE
 #define BLE_BOND_DATA_PAGE                      (PAGE_SIZE * (NRF_FICR->CODESIZE - 18))
 #endif
 
@@ -202,13 +202,13 @@ extern uint32_t __etext;
 // Enable/Disable BLE during normal operation.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_ENABLED
-#define MICROBIT_BLE_ENABLED                    1
+#define MICROBIT_BLE_ENABLED                    0
 #endif
 
 // Enable/Disable BLE pairing mode mode at power up.
 // Set '1' to enable.
 #ifndef MICROBIT_BLE_PAIRING_MODE
-#define MICROBIT_BLE_PAIRING_MODE               1
+#define MICROBIT_BLE_PAIRING_MODE               0
 #endif
 
 // Enable/Disable the use of private resolvable addresses.
@@ -427,7 +427,7 @@ extern uint32_t __etext;
 // Should be <= MBFS_BLOCK_SIZE.
 //
 #ifndef MBFS_CACHE_SIZE
-#define MBFS_CACHE_SIZE	    0   
+#define MBFS_CACHE_SIZE	    0
 #endif
 
 //

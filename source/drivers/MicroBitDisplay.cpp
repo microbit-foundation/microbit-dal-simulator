@@ -34,6 +34,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitFiber.h"
 #include "ErrorNo.h"
 #include "NotifyEvents.h"
+#include "emscripten.h"
 
 const int greyScaleTimings[MICROBIT_DISPLAY_GREYSCALE_BIT_DEPTH] = {1, 23, 70, 163, 351, 726, 1476, 2976};
 
@@ -81,9 +82,8 @@ MicroBitDisplay::MicroBitDisplay(uint16_t id, const MatrixMap &map) :
     this->setBrightness(MICROBIT_DISPLAY_DEFAULT_BRIGHTNESS);
     this->mode = DISPLAY_MODE_BLACK_AND_WHITE;
     this->animationMode = ANIMATION_MODE_NONE;
-    this->lightSensor = NULL;
 
-	system_timer_add_component(this);
+    system_timer_add_component(this);
 
     status |= MICROBIT_COMPONENT_RUNNING;
 }
@@ -195,7 +195,7 @@ void MicroBitDisplay::renderWithLightSense()
     //reset the row counts and bit mask when we have hit the max.
     if(strobeRow == matrixMap.rows + 1)
     {
-        MicroBitEvent(id, MICROBIT_DISPLAY_EVT_LIGHT_SENSE);
+        // MicroBitEvent(id, MICROBIT_DISPLAY_EVT_LIGHT_SENSE);
         strobeRow = 0;
     }
     else
@@ -459,8 +459,9 @@ void MicroBitDisplay::waitForFreeDisplay()
 void MicroBitDisplay::fiberWait()
 {
     if (fiber_wait_for_event(MICROBIT_ID_DISPLAY, MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE) == MICROBIT_NOT_SUPPORTED)
-        while(animationMode != ANIMATION_MODE_NONE && animationMode != ANIMATION_MODE_STOPPED)
-            __WFE();
+        while(animationMode != ANIMATION_MODE_NONE && animationMode != ANIMATION_MODE_STOPPED) {
+            wait_ms(1);
+        }
 }
 
 /**
@@ -1037,19 +1038,19 @@ int MicroBitDisplay::setBrightness(int b)
   */
 void MicroBitDisplay::setDisplayMode(DisplayMode mode)
 {
-    if(mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
-    {
-        //to reduce the artifacts on the display - increase the tick
-        if(system_timer_get_period() != MICROBIT_LIGHT_SENSOR_TICK_PERIOD)
-            system_timer_set_period(MICROBIT_LIGHT_SENSOR_TICK_PERIOD);
-    }
+    // if(mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    // {
+    //     //to reduce the artifacts on the display - increase the tick
+    //     if(system_timer_get_period() != MICROBIT_LIGHT_SENSOR_TICK_PERIOD)
+    //         system_timer_set_period(MICROBIT_LIGHT_SENSOR_TICK_PERIOD);
+    // }
 
-    if(this->mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE && mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
-    {
-        delete this->lightSensor;
+    // if(this->mode == DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE && mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    // {
+    //     delete this->lightSensor;
 
-        this->lightSensor = NULL;
-    }
+    //     this->lightSensor = NULL;
+    // }
 
     this->mode = mode;
 }
@@ -1137,6 +1138,7 @@ void MicroBitDisplay::setEnable(bool enableDisplay)
 void MicroBitDisplay::enable()
 {
     setEnable(true);
+    update_time();
 }
 
 /**
@@ -1177,7 +1179,7 @@ void MicroBitDisplay::clear()
   */
 void MicroBitDisplay::setFont(MicroBitFont font)
 {
-	MicroBitFont::setSystemFont(font);
+    MicroBitFont::setSystemFont(font);
 }
 
 /**
@@ -1187,7 +1189,7 @@ void MicroBitDisplay::setFont(MicroBitFont font)
   */
 MicroBitFont MicroBitDisplay::getFont()
 {
-	return MicroBitFont::getSystemFont();
+    return MicroBitFont::getSystemFont();
 }
 
 /**
@@ -1218,13 +1220,14 @@ MicroBitImage MicroBitDisplay::screenShot()
   */
 int MicroBitDisplay::readLightLevel()
 {
-    if(mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
-    {
-        setDisplayMode(DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE);
-        this->lightSensor = new MicroBitLightSensor(matrixMap);
-    }
+    // if(mode != DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE)
+    // {
+    //     setDisplayMode(DISPLAY_MODE_BLACK_AND_WHITE_LIGHT_SENSE);
+    //     this->lightSensor = new MicroBitLightSensor(matrixMap);
+    // }
 
-    return this->lightSensor->read();
+    // return this->lightSensor->read();
+    return 0;
 }
 
 /**

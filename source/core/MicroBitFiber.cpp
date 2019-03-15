@@ -414,8 +414,8 @@ int fiber_wake_on_event(uint16_t id, uint16_t value)
 {
     Fiber *f = currentFiber;
 
-	if (messageBus == NULL || !fiber_scheduler_running())
-		return MICROBIT_NOT_SUPPORTED;
+	  if (messageBus == NULL || !fiber_scheduler_running())
+		    return MICROBIT_NOT_SUPPORTED;
 
     // Sleep is a blocking call, so if we're in a fork on block context,
     // it's time to spawn a new fiber...
@@ -733,8 +733,10 @@ void verify_stack_size(Fiber *f)
     uint32_t stackDepth;
     uint32_t bufferSize;
 
+    volatile int stack_dummy;
+
     // Calculate the stack depth.
-    stackDepth = f->tcb.stack_base - ((uint32_t) __get_MSP());
+    stackDepth = f->tcb.stack_base - ((uint32_t) &stack_dummy);
 
     // Calculate the size of our allocated stack buffer
     bufferSize = f->stack_top - f->stack_bottom;
@@ -926,7 +928,7 @@ void idle()
 
     // If the above did create any useful work, enter power efficient sleep.
     if(scheduler_runqueue_empty())
-    	__WFE();
+    	wait_ms(200);
 }
 
 /**

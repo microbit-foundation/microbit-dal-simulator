@@ -37,6 +37,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitConfig.h"
 #include "MicroBitSystemTimer.h"
 #include "ErrorNo.h"
+#include "emscripten.h"
 
 /*
  * Time since power on. Measured in milliseconds.
@@ -79,6 +80,21 @@ int system_timer_init(int period)
 }
 
 /**
+  * Handler function called by the ticker to execute the periodic system wide tick.
+  *
+  */
+void ticker_handler(const ticker_data_t *data) {
+  static uint32_t last_slow_tick = 0;
+  uint32_t time = us_ticker_read();
+  uint32_t delta = time - last_slow_tick;
+  if (delta > tick_period * 1000) {
+    last_slow_tick = time;
+    system_timer_tick();
+  }
+  us_ticker_set_interrupt(time + (tick_period * 1000));
+}
+
+/**
   * Reconfigures the system wide timer to the given period in milliseconds.
   *
   * @param period the new period of the timer in milliseconds
@@ -92,11 +108,12 @@ int system_timer_set_period(int period)
 
     // If a timer is already running, ensure it is disabled before reconfiguring.
     if (tick_period)
-        ticker->detach();
+        us_ticker_clear_interrupt();
 
-	// register a period callback to drive the scheduler and any other registered components.
+	  // register a period callback to drive the scheduler and any other registered components.
     tick_period = period;
-    ticker->attach_us(system_timer_tick, period * 1000);
+    set_us_ticker_irq_handler(ticker_handler);
+    us_ticker_set_interrupt(us_ticker_read() + (tick_period * 1000));
 
     return MICROBIT_OK;
 }

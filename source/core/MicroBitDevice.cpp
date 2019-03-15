@@ -45,8 +45,10 @@ DEALINGS IN THE SOFTWARE.
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
+#ifndef TARGET_SIMULATOR
 #include "nrf_soc.h"
 #include "nrf_sdm.h"
+#endif
 
 /*
  * Return to our predefined compiler settings.
@@ -83,7 +85,11 @@ bool ble_running()
  */
 uint32_t microbit_serial_number()
 {
+#ifdef TARGET_SIMULATOR
+    return 1;
+#elif
     return NRF_FICR->DEVICEID[1];
+#endif
 }
 
 /**
@@ -103,13 +109,13 @@ char* microbit_friendly_name()
     };
 
     // We count right to left, so create a pointer to the end of the buffer.
-	char *name = friendly_name;
+    char *name = friendly_name;
     name += MICROBIT_NAME_LENGTH;
 
     // Terminate the string.
     *name = 0;
 
-	// Derive our name from the nrf51822's unique ID.
+    // Derive our name from the nrf51822's unique ID.
     uint32_t n = microbit_serial_number();
     int ld = 1;
     int d = MICROBIT_NAME_CODE_LETTERS;
@@ -133,7 +139,8 @@ char* microbit_friendly_name()
 void
 microbit_reset()
 {
-    NVIC_SystemReset();
+    EM_ASM({ location.reload(); });
+    wait_ms(1);
 }
 
 /**
@@ -193,7 +200,9 @@ void microbit_panic(int statusCode)
     if(statusCode < 0 || statusCode > 999)
         statusCode = 0;
 
+    #ifndef TARGET_SIMULATOR
     __disable_irq(); //stop ALL interrupts
+    #endif
 
 
     //point to the font stored in Flash
@@ -242,16 +251,10 @@ void microbit_panic(int statusCode)
                 else
                     LEDMatrix = col_data | row_data;
 
-                //burn cycles
-                i = 2000;
-                while(i>0)
-                {
-                    // Check if the reset button has been pressed. Interrupts are disabled, so the normal method can't be relied upon...
-                    if (resetButton == 0)
-                        microbit_reset();
-
-                    i--;
-                }
+                wait_ms(1);
+                // Check if the reset button has been pressed. Interrupts are disabled, so the normal method can't be relied upon...
+                if (resetButton == 0)
+                    microbit_reset();
 
                 //update the bit mask and row count
                 row_data <<= 1;
@@ -298,13 +301,13 @@ int microbit_random(int max)
     do {
         m = (uint32_t)max;
         result = 0;
-		do {
+        do {
             // Cycle the LFSR (Linear Feedback Shift Register).
             // We use an optimal sequence with a period of 2^32-1, as defined by Bruce Schneier here (a true legend in the field!),
             // For those interested, it's documented in his paper:
             // "Pseudo-Random Sequence Generator for 32-Bit CPUs: A fast, machine-independent generator for 32-bit Microprocessors"
             // https://www.schneier.com/paper-pseudorandom-sequence.html
-			uint32_t rnd = random_value;
+            uint32_t rnd = random_value;
 
             rnd = ((((rnd >> 31)
                           ^ (rnd >> 6)
@@ -316,7 +319,7 @@ int microbit_random(int max)
                           << 31 )
                           | (rnd >> 1);
 
-			random_value = rnd;
+            random_value = rnd;
 
             result = ((result << 1) | (rnd & 0x00000001));
         } while(m >>= 1);
@@ -335,6 +338,11 @@ int microbit_random(int max)
   */
 void microbit_seed_random()
 {
+#ifdef TARGET_SIMULATOR
+    random_value = EM_ASM_({
+      return Math.floor(Math.random() * Math.floor(4294967296));
+    });
+#elif
     random_value = 0;
 
     if(ble_running())
@@ -367,6 +375,7 @@ void microbit_seed_random()
         // Disable the generator to save power.
         NRF_RNG->TASKS_STOP = 1;
     }
+#endif
 }
 
 /**

@@ -411,7 +411,7 @@ int MicroBitSerial::sendChar(char c, MicroBitSerialMode mode)
             return result;
     }
 
-    uint8_t toTransmit[2] =  { c, '\0'};
+    uint8_t toTransmit[2] =  { static_cast<uint8_t>(c), '\0'};
 
     int bytesWritten = setTxInterrupt(toTransmit, 1, mode);
 

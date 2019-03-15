@@ -27,9 +27,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include "MicroBitConfig.h"
 #include "MicroBitComponent.h"
-#include "MicroBitPin.h"
 #include "CoordinateSystem.h"
-#include "MicroBitI2C.h"
 
 /**
  * Status flags
@@ -134,10 +132,10 @@ class MicroBitAccelerometer : public MicroBitComponent
          * Device autodetection. Scans the given I2C bus for supported accelerometer devices.
          * if found, constructs an appropriate driver and returns it.
          *
-         * @param i2c the bus to scan. 
+         * @param i2c the bus to scan.
          *
          */
-        static MicroBitAccelerometer& autoDetect(MicroBitI2C &i2c); 
+        static MicroBitAccelerometer& autoDetect();
 
         /**
          * Attempts to set the sample rate of the accelerometer to the specified value (in ms).
