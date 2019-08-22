@@ -139,7 +139,7 @@ char* microbit_friendly_name()
 void
 microbit_reset()
 {
-    EM_ASM({ location.reload(); });
+    EM_ASM({ location.reload(false); });
     wait_ms(1);
 }
 
