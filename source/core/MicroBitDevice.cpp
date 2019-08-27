@@ -45,7 +45,9 @@ DEALINGS IN THE SOFTWARE.
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
-#ifndef TARGET_SIMULATOR
+#ifdef TARGET_SIMULATOR
+extern volatile bool perform_reset;
+#else
 #include "nrf_soc.h"
 #include "nrf_sdm.h"
 #endif
@@ -204,7 +206,6 @@ void microbit_panic(int statusCode)
     __disable_irq(); //stop ALL interrupts
     #endif
 
-
     //point to the font stored in Flash
     const unsigned char* fontLocation = MicroBitFont::defaultFont;
 
@@ -253,8 +254,9 @@ void microbit_panic(int statusCode)
 
                 wait_ms(1);
                 // Check if the reset button has been pressed. Interrupts are disabled, so the normal method can't be relied upon...
-                if (resetButton == 0)
-                    microbit_reset();
+                if (perform_reset) {
+                    return;
+                }
 
                 //update the bit mask and row count
                 row_data <<= 1;
@@ -266,8 +268,6 @@ void microbit_panic(int statusCode)
         if (panic_timeout)
             count--;
     }
-
-    microbit_reset();
 }
 
 /**
